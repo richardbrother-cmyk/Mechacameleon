@@ -1,0 +1,12 @@
+# Blueprint de Render: https://render.com -> New -> Blueprint -> elige este repo.
+services:
+  - type: web
+    name: mecha-chameleon-online
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

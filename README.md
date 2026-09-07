@@ -33,7 +33,12 @@ npm test
 El servidor es un único proceso Node sin base de datos, así que funciona en cualquier host que
 acepte WebSockets. Ejemplos:
 
-- **Render / Railway / Fly.io / Koyeb**: crea un servicio web desde este repositorio; comando de
+- **Render (gratis, recomendado para probar)**: el repo incluye `render.yaml`. Entra en
+  <https://dashboard.render.com>, pulsa **New → Blueprint**, conecta tu cuenta de GitHub, elige este
+  repositorio y la rama, y pulsa **Apply**. En unos minutos tendrás una URL pública
+  `https://mecha-chameleon-online.onrender.com` (el nombre puede variar). El plan gratuito se
+  duerme tras 15 min sin uso; la primera visita tarda ~30 s en despertar.
+- **Railway / Fly.io / Koyeb**: crea un servicio web desde este repositorio; comando de
   inicio `npm start`. Todos ellos detectan el `PORT` automáticamente.
 - **Docker**:
 
