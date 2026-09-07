@@ -1,0 +1,17 @@
+{
+  "name": "mecha-chameleon-online",
+  "version": "1.0.0",
+  "description": "Juego multijugador online de escondite con camuflaje pintado, inspirado en MECCHA CHAMELEON",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node test/smoke.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "license": "MIT"
+}

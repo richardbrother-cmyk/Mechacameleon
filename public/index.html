@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mecha Chameleon Online</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233e7f3e'/%3E%3Ccircle cx='16' cy='12' r='6' fill='%23fff'/%3E%3Crect x='11' y='18' width='10' height='11' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- Pantalla de entrada -->
+  <div id="screen-join" class="screen">
+    <div class="panel">
+      <h1>Mecha Chameleon <span>Online</span></h1>
+      <p class="tagline">Escondite con camuflaje: pinta tu cuerpo blanco para fundirte con el escenario antes de que los buscadores te encuentren.</p>
+      <label>Tu nombre <input id="name" maxlength="16" placeholder="Camaleón"></label>
+      <div class="row">
+        <button id="btn-create" class="primary">Crear sala</button>
+        <label class="check"><input type="checkbox" id="is-public" checked> Sala pública</label>
+      </div>
+      <div class="row">
+        <input id="code" maxlength="4" placeholder="CÓDIGO" style="text-transform:uppercase">
+        <button id="btn-join">Unirse por código</button>
+      </div>
+      <div class="rooms">
+        <div class="rooms-head">Salas públicas <button id="btn-refresh" class="small">Actualizar</button></div>
+        <ul id="room-list"><li class="muted">No hay salas públicas. ¡Crea una!</li></ul>
+      </div>
+      <p class="muted small-text" id="conn-status">Conectando…</p>
+    </div>
+  </div>
+
+  <!-- Lobby -->
+  <div id="screen-lobby" class="screen hidden">
+    <div class="panel wide">
+      <div class="lobby-head">
+        <div>Sala <b id="lobby-code">----</b> <button id="btn-copy" class="small">Copiar enlace</button></div>
+        <button id="btn-leave" class="small danger">Salir</button>
+      </div>
+      <div class="lobby-body">
+        <div>
+          <h3>Jugadores (<span id="lobby-count">0</span>)</h3>
+          <ul id="lobby-players"></ul>
+        </div>
+        <div>
+          <h3>Ajustes</h3>
+          <label>Tiempo para esconderse (s) <input type="number" id="set-hide" value="60" min="15" max="300"></label>
+          <label>Tiempo de búsqueda (s) <input type="number" id="set-seek" value="150" min="30" max="600"></label>
+          <label>Escenario
+            <select id="set-theme">
+              <option value="random">Aleatorio</option>
+              <option value="almacen">Almacén</option>
+              <option value="jardin">Jardín</option>
+              <option value="galeria">Galería</option>
+            </select>
+          </label>
+          <button id="btn-start" class="primary big">Iniciar ronda</button>
+          <p class="muted small-text" id="lobby-hint">Mientras esperas puedes moverte y practicar la pintura en el escenario.</p>
+        </div>
+      </div>
+      <details class="help">
+        <summary>Cómo se juega / controles</summary>
+        <div class="help-cols">
+          <div>
+            <h4>Reglas</h4>
+            <ul>
+              <li>Cada ronda hay <b>buscadores</b> (1 de cada 3 jugadores) y <b>escondidos</b>.</li>
+              <li>Los escondidos empiezan con el cuerpo <b>blanco</b>. Durante la fase de escondite copian colores del escenario y pintan su cuerpo para camuflarse.</li>
+              <li>Después los buscadores salen de su base con una linterna y una escopeta: un disparo acertado elimina al escondido.</li>
+              <li>Los escondidos ganan <b>1 punto por segundo</b> mientras están dentro del radio de visión de un buscador sin ser descubiertos, +30 si sobreviven.</li>
+              <li>Los buscadores ganan 25 puntos por cada captura y +30 si encuentran a todos. Fallar un disparo resta 1.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Controles</h4>
+            <ul>
+              <li><kbd>WASD</kbd>/<kbd>Flechas</kbd> moverse · <kbd>Rueda</kbd> zoom</li>
+              <li><kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>R</kbd> voltear · <kbd>1</kbd>–<kbd>5</kbd> poses</li>
+              <li><kbd>Clic izq.</kbd> pintar (escondido) / disparar (buscador)</li>
+              <li><kbd>Clic der.</kbd> cuentagotas: copia el color del escenario</li>
+              <li><kbd>[</kbd> <kbd>]</kbd> tamaño del pincel · <kbd>G</kbd> rellenar la parte bajo el cursor</li>
+              <li><kbd>T</kbd> silbar (atrae a los buscadores, +3 puntos) · <kbd>Tab</kbd> marcador</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div id="hud-phase">Lobby</div>
+      <div id="hud-timer">0:00</div>
+      <div id="hud-role"></div>
+      <div id="hud-info"></div>
+      <div id="hud-zoom">x1.0</div>
+    </div>
+    <div id="hud-left" class="hidden">
+      <div class="tool-title">Pintura</div>
+      <div class="tool-row">
+        <div id="swatch" title="Color actual"></div>
+        <input type="color" id="color-input" value="#ff4040" title="Elegir color">
+        <span class="muted small-text">Clic der. = cuentagotas</span>
+      </div>
+      <div class="tool-row">
+        <span>Pincel</span>
+        <div id="brush-sizes"></div>
+      </div>
+      <div class="tool-row"><span>Recientes</span><div id="palette"></div></div>
+      <div class="tool-row"><span>Pose</span><div id="poses"></div></div>
+      <div class="tool-row">
+        <button id="btn-fill" class="small" title="G: rellena la parte bajo el cursor">Rellenar parte (G)</button>
+        <button id="btn-clear" class="small danger" title="Volver a blanco">Limpiar</button>
+      </div>
+      <div class="tool-row"><button id="btn-taunt" class="small" title="T">Silbar (T)</button></div>
+    </div>
+    <div id="hud-bottom">
+      <span id="hud-tip"></span>
+    </div>
+    <div id="hud-msg"></div>
+  </div>
+
+  <!-- Espera del buscador -->
+  <div id="screen-wait" class="screen hidden dark">
+    <div class="panel center">
+      <h2>Eres <span class="seeker">BUSCADOR</span></h2>
+      <p>Los escondidos se están camuflando. Espera en la base…</p>
+      <div class="bigtimer" id="wait-timer">0:00</div>
+      <p class="muted">Cuando empiece la búsqueda, usa el <b>clic izquierdo</b> para disparar y la <b>rueda</b> para hacer zoom. Solo ves lo que alumbra tu linterna.</p>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div id="screen-results" class="screen hidden dark">
+    <div class="panel">
+      <h2 id="results-title">Resultados</h2>
+      <p id="results-sub" class="muted"></p>
+      <table id="results-table"><thead><tr><th>Jugador</th><th>Rol</th><th>Ronda</th><th>Total</th></tr></thead><tbody></tbody></table>
+      <p class="muted small-text">Volviendo al lobby en <span id="results-timer">10</span> s…</p>
+    </div>
+  </div>
+
+  <!-- Marcador (Tab) -->
+  <div id="scoreboard" class="hidden">
+    <table><thead><tr><th>Jugador</th><th>Rol</th><th>Ronda</th><th>Total</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script src="/shared/body.js"></script>
+  <script src="/js/util.js"></script>
+  <script src="/js/mapgen.js"></script>
+  <script src="/js/painter.js"></script>
+  <script src="/js/net.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>
